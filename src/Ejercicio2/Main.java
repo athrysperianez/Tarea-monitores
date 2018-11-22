@@ -1,3 +1,5 @@
+package Ejercicio2;
+
 /*
  *Creado por Elias Periañez
  *20 nov. 2018
@@ -9,7 +11,6 @@ ________________________________________________________________________________
  *As part of the project Tarea 4-Monitores (Ultra Instinto)
  *This file is under the Creative Commons Attribution 4.0 International (More info here https://creativecommons.org/licenses/by/4.0/)
  */
-package Ejercicio2;
 
 public class Main {
 
@@ -25,14 +26,20 @@ public class Main {
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
-		System.out.println(dp.getElementos());
+		if (dp.getElementos())
+			System.out.println("Ejecucion terminada con produccion sobrante\n");
+		else
+			System.out.println("Ejecucion terminada sin produccion sobrante\n");
 
+		System.out.println("Producido:" + pd.getProduccion());
+		System.out.println("\nConsumido:" + cs.getConsumicion());
 	}
 
 }
 
 class Productor extends Thread {
 	private Deposito deposito;
+	private int produccion = 0;//Cuenta de la produccion
 
 	public Productor(Deposito d) {
 		deposito = d;
@@ -40,18 +47,35 @@ class Productor extends Thread {
 
 	public void run() {
 		for (int i = 1; i < 20; i++) {
-			try {
-				deposito.wait();
-			} catch (InterruptedException e) {
-				e.printStackTrace();
+			synchronized (deposito) {//Bloque sincronizado usando como monitor el objeto deposito
+				while (deposito.getElementos()) {//Mientras haya un elemento no se necesita prodccion
+					try {
+						System.out.println("El productor esta a la espara\n");
+						deposito.wait();//Se duerme y libera su hueco en el monitor de deposio
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+				}
+				deposito.guardar();//Se produce un objeto y se guarda
+				System.out.println("Se ha producido una unidad\n"); 
+				this.produccion++;
+				deposito.notify();//Se avisa al monitor de deposito
 			}
-			deposito.guardar();
 		}
+	}
+
+	public int getProduccion() {
+		return produccion;
+	}
+
+	public void setProduccion(int produccion) {
+		this.produccion = produccion;
 	}
 }
 
 class Consumidor extends Thread {
 	private Deposito deposito;
+	private int consumicion = 0;//Cuenta de la consumiciones
 
 	public Consumidor(Deposito d) {
 		deposito = d;
@@ -59,33 +83,44 @@ class Consumidor extends Thread {
 
 	public void run() {
 		for (int i = 1; i < 20; i++) {
-			try {
-				wait();
-			} catch (InterruptedException e) {
-				e.printStackTrace();
+			synchronized (deposito) {
+				while (!deposito.getElementos()) {
+					try {
+						System.out.println("El consumidor esta a la espera\n");
+						deposito.wait();
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+				}
+				deposito.sacar();
+				System.out.println("Se ha consumido una unidad\n");
+				this.consumicion++;
+				deposito.notify();
 			}
-			deposito.sacar();
 		}
+	}
+
+	public int getConsumicion() {
+		return consumicion;
+	}
+
+	public void setConsumicion(int consumicion) {
+		this.consumicion = consumicion;
 	}
 }
 
 class Deposito {
 	private boolean elementos = false;
-	
+
 	public boolean getElementos() {
 		return this.elementos;
 	}
 
-	public synchronized void guardar() {
-		while (!elementos) {
-			notifyAll();
-			elementos = !elementos;
-		}
+	public void guardar() {
+		elementos = true;
 	}
 
-	public synchronized void sacar() {
-		while (elementos)
-			notifyAll();
-			elementos = !elementos;
+	public void sacar() {
+		elementos = false;
 	}
 }
