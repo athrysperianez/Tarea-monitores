@@ -18,6 +18,10 @@ public class Main {
 
 	public static String textData = "";
 	public static volatile AtomicReference<Integer> count = new AtomicReference<Integer>(0);
+	/**
+	 * En lugar de un metodo syncronized utilizo atomic reference que por dentro hace todo de manera automatica para que una variable
+	 * funcione como un atributo con sus getter y setter sincronizados
+	**/
 	
 	public static void main(String[] args) {
 		Scanner sc = new Scanner(System.in);
@@ -38,6 +42,7 @@ public class Main {
 
 		} catch (NotVowelException e) {
 			e.printStackTrace();
+			System.exit(-1);
 		}
 		
 		thA.start();
